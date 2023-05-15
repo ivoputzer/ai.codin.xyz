@@ -6,6 +6,8 @@ go-gpt2
 go-rwkv
 whisper.cpp
 
+.models
+
 # LocalAI build binary
 LocalAI
 local-ai
@@ -20,3 +22,4 @@ release/
 
 # just in case
 .DS_Store
+todo.md

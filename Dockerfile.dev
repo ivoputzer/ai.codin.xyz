@@ -1,16 +1,27 @@
 ARG GO_VERSION=1.20
 ARG DEBIAN_VERSION=11
-ARG BUILD_TYPE=
+ARG BUILD_TYPE=default
 
-FROM golang:$GO_VERSION as builder
+FROM golang:$GO_VERSION
 WORKDIR /build
-RUN apt-get update && apt-get install -y cmake libgomp1 libopenblas-dev libopenblas-base libopencv-dev libopencv-core-dev libopencv-core4.5 
-RUN ln -s /usr/include/opencv4/opencv2/ /usr/include/opencv2
+RUN apt-get update && apt-get install -y cmake libgomp1 libopenblas-dev libopenblas-base libopencv-dev libopencv-core-dev libopencv-core4.5 libprotobuf-dev protobuf-compiler ca-certificates ffmpeg
 COPY . .
-RUN make build
+RUN ln -s /usr/include/opencv4/opencv2/ /usr/include/opencv2
+RUN make build GO_TAGS=stablediffusion LLAMA_OPENBLAS=1
 
 FROM debian:$DEBIAN_VERSION
-COPY --from=builder /build/local-ai /usr/bin/local-ai
-RUN apt-get update && apt-get install -y ca-certificates
-EXPOSE 8080
+ENV DEBIAN_FRONTEND="noninteractive"
+RUN apt-get update && apt-get install -y libgomp1 libopenblas-dev libopenblas-base libopencv-dev libopencv-core-dev libopencv-core4.5 libprotobuf-dev protobuf-compiler ca-certificates ffmpeg
+COPY --from=0 /build/local-ai /usr/bin/local-ai
+RUN ln -s /usr/include/opencv4/opencv2/ /usr/include/opencv2
+ENV ADDRESS=":80"
+ENV MODELS_PATH="/models"
+ENV CONTEXT_SIZE="512"
+ENV DEBUG="true"
+ENV THREADS="4"
+ENV UPLOAD_LIMIT="50"
+ENV TMPDIR="/tmp"
+ENV CONFIG_FILE="/models/config.yaml"
+ENV IMAGE_PATH="/images"
+EXPOSE 80
 ENTRYPOINT [ "/usr/bin/local-ai" ]
